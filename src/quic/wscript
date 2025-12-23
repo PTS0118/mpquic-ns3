@@ -32,7 +32,8 @@ def build(bld):
         'model/mp-quic-scheduler.cc',
         'model/mp-quic-path-manager.cc',
         'model/mp-quic-congestion-ops.cc',
-        'helper/quic-helper.cc'
+        'helper/quic-helper.cc',
+        'model/quic-app-prio-tag.cc'
         ]
 
     module_test = bld.create_ns3_module_test_library('quic')
@@ -69,7 +70,8 @@ def build(bld):
         'model/mp-quic-scheduler.h',
         'model/mp-quic-path-manager.h',
         'model/mp-quic-congestion-ops.h',
-        'model/windowed-filter.h'
+        'model/windowed-filter.h',
+        'model/quic-app-prio-tag.h'
         ]
 
     if bld.env.ENABLE_EXAMPLES:

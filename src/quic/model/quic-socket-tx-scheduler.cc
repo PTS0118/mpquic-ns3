@@ -35,6 +35,7 @@
 #include "quic-subheader.h"
 #include "quic-socket-tx-buffer.h"
 #include "quic-socket-base.h"
+#include "quic-app-prio-tag.h"
 
 namespace ns3 {
 

@@ -268,7 +268,7 @@ bool QuicSocketTxBuffer::Add (Ptr<Packet> p)
           QuicAppPrioTag prioTag;
           if (p->PeekPacketTag (prioTag))
             {
-              item->m_appPrioHint = prioTag.GetPriority ();
+              item->m_appPrioHint = prioTag.GetPrio ();
             }
           else
              {

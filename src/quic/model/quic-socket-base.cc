@@ -73,6 +73,7 @@
 
 #include "mp-quic-scheduler.h"
 #include "mp-quic-congestion-ops.h"
+#include "quic-app-prio-tag.h"
 
 namespace ns3 {
 

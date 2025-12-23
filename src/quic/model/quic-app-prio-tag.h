@@ -3,38 +3,32 @@
 
 #include "ns3/tag.h"
 #include "ns3/uinteger.h"
+#include "ns3/double.h"
 
 namespace ns3 {
 
-/**
- * PacketTag to carry application priority hint (0..1) for a QUIC STREAM frame.
- * We store it as uint16 scaled to [0, 65535] to keep serialization simple.
- */
 class QuicAppPrioTag : public Tag
 {
 public:
-  QuicAppPrioTag () : m_scaled (32768) {}
-  explicit QuicAppPrioTag (double prio) { SetPriority (prio); }
+  QuicAppPrioTag ();
+  explicit QuicAppPrioTag (double prio);
 
   static TypeId GetTypeId (void);
   TypeId GetInstanceTypeId (void) const override;
 
-  uint32_t GetSerializedSize (void) const override { return 2; }
-  void Serialize (TagBuffer i) const override { i.WriteU16 (m_scaled); }
-  void Deserialize (TagBuffer i) override { m_scaled = i.ReadU16 (); }
+  uint32_t GetSerializedSize (void) const override;
+  void Serialize (TagBuffer i) const override;
+  void Deserialize (TagBuffer i) override;
   void Print (std::ostream &os) const override;
 
-  void SetPriority (double prio)
-  {
-    if (prio < 0.0) prio = 0.0;
-    if (prio > 1.0) prio = 1.0;
-    m_scaled = (uint16_t) (prio * 65535.0 + 0.5);
-  }
+  void SetPrio (double p);
+  double GetPrio () const;
 
-  double GetPriority () const { return ((double)m_scaled) / 65535.0; }
+  // 关键：让 vtable 有稳定落点（out-of-line 析构定义在 .cc）
+  ~QuicAppPrioTag () override;
 
 private:
-  uint16_t m_scaled;
+  double m_prio; // 0..1
 };
 
 } // namespace ns3
