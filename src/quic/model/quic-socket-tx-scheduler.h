@@ -51,6 +51,14 @@ public:
   QuicSocketTxScheduleItem (uint64_t id, uint64_t off, double p, Ptr<QuicSocketTxItem> it);
   QuicSocketTxScheduleItem (const QuicSocketTxScheduleItem &other);
 
+  double GetAppPrioHint () const { return m_appPrioHint; }
+  void SetAppPrioHint (double p)
+  {
+    if (p < 0.0) p = 0.0;
+    if (p > 1.0) p = 1.0;
+    m_appPrioHint = p;
+  }
+
   /**
    *  Compare \p this to another QuicSocketTxScheduleItem
    *
@@ -110,6 +118,7 @@ private:
   uint64_t m_streamId;                //!< ID of the stream the item belongs to
   uint64_t m_offset;                  //!< offset on the stream
   double m_priority;                  //!< Priority level of the item (lowest is sent first)
+  double m_appPrioHint { 0.5 };
   Ptr<QuicSocketTxItem> m_item;       //!< TxItem containing the packet
 };
 
@@ -183,6 +192,8 @@ public:
    * indicate the offset in order to out-of-order schedule
    */
   uint32_t ofo_offset = 2920; 
+  bool PeekNextStreamId(uint64_t &streamId) const;
+  bool PeekNextScheduleItem(uint64_t &streamId, double &appPrio) const;
 
 
 private:

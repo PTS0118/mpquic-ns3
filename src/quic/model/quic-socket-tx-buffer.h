@@ -114,6 +114,8 @@ public:
   Time m_firstSentTime { Seconds (0) };      //!< Connection's first sent time at the time the packet was sent
   bool m_isAppLimited { false };       //!< Connection's app limited at the time the packet was sent
   uint32_t m_ackBytesSent { 0 };       //!< Connection's ACK-only bytes sent at the time the packet was sent
+  // Application priority hint [0..1] carried with this STREAM frame (from QuicAppPrioTag)
+  double m_appPrioHint { 0.5 };
 };
 
 /**
@@ -370,6 +372,7 @@ public:
   void AddSentList (uint8_t pathId);
 
   int SentListIsEmpty();
+  Ptr<QuicSocketTxScheduler> GetScheduler () const { return m_scheduler; }
 
 private:
   typedef std::list<Ptr<QuicSocketTxItem> > QuicTxPacketList;      //!< container for data stored in the buffer

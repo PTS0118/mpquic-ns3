@@ -327,5 +327,25 @@ QuicSocketTxScheduler::AppSize (void) const
   return m_appSize;
 }
 
+ bool
+ QuicSocketTxScheduler::PeekNextStreamId(uint64_t &streamId) const
+ {
+   Ptr<QuicSocketTxScheduleItem> it = m_appList.top();
+   streamId = it->GetStreamId();
+   return true;
+ }
+ 
+bool
+QuicSocketTxScheduler::PeekNextScheduleItem(uint64_t& streamId, double& appPrio) const
+{
+  if (m_appList.empty())
+    {
+      return false;
+    }
+  Ptr<QuicSocketTxScheduleItem> it = m_appList.top();
+  streamId = it->GetStreamId();
+  appPrio = it->GetAppPrioHint(); // THIS is (g,t,k) app priority hint
+  return true;
+}
 
 }

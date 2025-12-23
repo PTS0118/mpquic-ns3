@@ -1041,6 +1041,20 @@ QuicSocketBase::SendPendingData (bool withAck)
   }
 
 
+ // Peek the next-to-send stream's app priority hint from TxScheduler
+  uint64_t nextStreamId = 0;
+  double nextAppPrio = 0.5;
+  if (m_txBuffer && m_txBuffer->GetScheduler () &&
+      m_txBuffer->GetScheduler ()->PeekNextScheduleItem (nextStreamId, nextAppPrio))
+    {
+      SetTxPriorityHint (nextAppPrio);
+    }
+  else
+    {
+      SetTxPriorityHint (0.5);
+    }
+
+
   std::vector<double> sendP = m_scheduler->GetNextPathIdToUse();
 
   for (uint8_t sendingPathId = 0; sendingPathId < sendP.size(); sendingPathId++)

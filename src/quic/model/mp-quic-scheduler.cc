@@ -40,6 +40,7 @@
 
 #include "mp-quic-scheduler.h"
 #include "ns3/random-variable-stream.h"
+#include "quic-socket-base.h"
 
 
 using Eigen::MatrixXd;
@@ -137,6 +138,10 @@ MpQuicScheduler::GetNextPathIdToUse()
     case PEEKABOO:
       tosend = Peekaboo();
       break;
+    
+    case PRIORITY_LOAD:
+      tosend = PriorityLoad();
+      break;
 
     default:
       tosend = RoundRobin();
@@ -207,6 +212,84 @@ MpQuicScheduler::MinRtt()
   tosend[m_lastUsedPathId] = 1.0;
   return tosend;
 }
+
+std::vector<double>
+MpQuicScheduler::PriorityLoad()
+{
+  m_subflows = m_socket->GetActiveSubflows();
+  const uint32_t K = (uint32_t)m_subflows.size();
+  std::vector<double> w(K, 0.0);
+
+  if (K <= 1)
+    {
+      w[0] = 1.0;
+      return w;
+    }
+
+  // 1) 当前要发的“应用优先级 hint”
+  double prio = 0.5;
+  if (m_socket)
+    {
+      prio = m_socket->GetTxPriorityHint(); // ✅ 你刚在 QuicSocketBase 加的接口
+    }
+  if (prio < 0.0) prio = 0.0;
+  if (prio > 1.0) prio = 1.0;
+
+  // 2) 基于路径状态打分：rtt 越小越好、available window 越大越好、inflight 越小越好
+  std::vector<double> score(K, 0.0);
+
+  double rttMin = 1e9, rttMax = 0.0;
+  for (uint32_t i=0;i<K;i++)
+    {
+      double rtt = m_subflows[i]->m_tcb->m_lastRtt.Get().GetSeconds();
+      if (rtt <= 0.0) rtt = 1e-3;
+      rttMin = std::min(rttMin, rtt);
+      rttMax = std::max(rttMax, rtt);
+    }
+  double span = std::max(1e-6, rttMax - rttMin);
+
+  for (uint32_t i=0;i<K;i++)
+    {
+      double rtt = m_subflows[i]->m_tcb->m_lastRtt.Get().GetSeconds();
+      if (rtt <= 0.0) rtt = 1e-3;
+      double rttBenefit = 1.0 - (rtt - rttMin) / span; // 0..1
+
+      double wnd = (double)m_socket->AvailableWindow(i);
+      double infl = (double)m_socket->BytesInFlight(i);
+
+      // 轻量化：log 压缩动态范围
+      double wndTerm  = std::log(1.0 + wnd);
+      double inflTerm = std::log(1.0 + infl);
+
+      score[i] = 1.0 * rttBenefit + 0.3 * wndTerm - 0.3 * inflTerm;
+    }
+
+  // 3) softmax -> 权重；prio 越高，温度越低，越“集中到最好路径”
+  uint32_t best = 0;
+  for (uint32_t i=1;i<K;i++)
+    if (score[i] > score[best]) best = i;
+
+  double temp = std::max(0.15, 1.0 - 0.85 * prio);
+
+  double sum = 0.0;
+  for (uint32_t i=0;i<K;i++)
+    {
+      double z = (score[i] - score[best]) / temp;
+      double e = std::exp(z);
+      w[i] = e;
+      sum += e;
+    }
+  if (sum <= 0.0)
+    {
+      w.assign(K, 0.0);
+      w[best] = 1.0;
+      return w;
+    }
+  for (uint32_t i=0;i<K;i++) w[i] /= sum;
+
+  return w;
+}
+
 
 void
 MpQuicScheduler::SetSocket(Ptr<QuicSocketBase> sock)

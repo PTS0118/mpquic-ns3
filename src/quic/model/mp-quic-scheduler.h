@@ -40,7 +40,8 @@ public:
       MIN_RTT,
       BLEST,
       ECF,
-      PEEKABOO
+      PEEKABOO,
+      PRIORITY_LOAD
     } SchedulerType_t;
   
   /**
@@ -78,6 +79,7 @@ private:
   std::vector<double> MabDelay();
   std::vector<double> Blest();
   std::vector<double> Ecf();
+  std::vector<double> PriorityLoad();
 
   uint32_t m_rate;
   uint16_t m_lostPackets;
@@ -99,6 +101,14 @@ private:
   VectorXd peek_x = VectorXd::Constant(6,0);
   double T_r, g = 1, R = 0, T_e;
   double rtt[8];
+  // Peekaboo-related state removed (Eigen)
+  // If PEEKABOO is selected, we fallback to MinRtt().
+  // PriorityLoad params
+  double m_plwRtt  { 1.0 };
+  double m_plwWnd  { 0.2 };
+  double m_plwInfl { 0.2 };
+  double m_plwPrio { 1.0 };
+  double m_plEps   { 1e-9 };
 };
 
 } // namespace ns3

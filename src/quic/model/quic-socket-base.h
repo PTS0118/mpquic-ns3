@@ -212,6 +212,15 @@ public:
   void SetSubsocket ();
   bool IsSubsocket ();
 
+  // MP scheduler reads current "next-to-send" application priority hint from here.
+  void SetTxPriorityHint (double p)
+  {
+    if (p < 0.0) p = 0.0;
+    if (p > 1.0) p = 1.0;
+    m_txPriorityHint = p;
+  }
+  double GetTxPriorityHint () const { return m_txPriorityHint; }
+
   virtual ~QuicSocketBase (void);
 
   static void NotifyConnectionEstablishedEnb (std::string context,
@@ -951,6 +960,7 @@ protected:
   void UpdateReward (uint32_t oldValue, uint32_t newValue);
   int m_appCloseSentListNoEmpty;
   Time lastAckTime;
+  double m_txPriorityHint { 0.5 };
 };
 
 

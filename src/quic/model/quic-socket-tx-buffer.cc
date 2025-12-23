@@ -37,6 +37,7 @@
 #include "quic-socket-base.h"
 #include "quic-socket-tx-scheduler.h"
 #include "quic-socket-tx-edf-scheduler.h"
+#include "quic-app-prio-tag.h"
 
 namespace ns3 {
 
@@ -108,7 +109,7 @@ void QuicSocketTxItem::Print (std::ostream &os) const
 
 void QuicSocketTxItem::MergeItems (QuicSocketTxItem &t1, QuicSocketTxItem &t2)
 {
-
+  t1.m_appPrioHint = std::max (t1.m_appPrioHint, t2.m_appPrioHint);
   if (t1.m_sacked == true && t2.m_sacked == true)
     {
       t1.m_sacked = true;
@@ -264,6 +265,15 @@ bool QuicSocketTxBuffer::Add (Ptr<Packet> p)
           Ptr<QuicSocketTxItem> item = CreateObject<QuicSocketTxItem> ();
           item->m_packet = p;
           // check to which stream this packet belongs to
+          QuicAppPrioTag prioTag;
+          if (p->PeekPacketTag (prioTag))
+            {
+              item->m_appPrioHint = prioTag.GetPriority ();
+            }
+          else
+             {
+               item->m_appPrioHint = 0.5;
+             }
           uint32_t streamId = 0;
           bool isStream = false;
           if (headerSize)
